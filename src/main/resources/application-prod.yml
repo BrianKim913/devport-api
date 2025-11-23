@@ -27,3 +27,14 @@ logging:
     kr.devport: INFO
     org.springframework.web: WARN
     org.hibernate.SQL: WARN
+
+# Application Configuration for Production
+app:
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000  # 24 hours
+
+  # OAuth2 Redirect URI (Production)
+  oauth2:
+    redirect-uri: https://devport.kr/oauth2/redirect

@@ -6,6 +6,8 @@ Backend API for DevPort (devport.kr) - Korean-language developer content aggrega
 
 - **Spring Boot 4.0.0** with Java 25
 - **Spring Data JPA** for database operations
+- **Spring Security** with OAuth2 (GitHub, Google)
+- **JWT** for authentication
 - **Gradle** for build management
 - **Lombok** for boilerplate reduction
 - **H2** (development), **PostgreSQL/MySQL** (production)
@@ -16,30 +18,49 @@ Backend API for DevPort (devport.kr) - Korean-language developer content aggrega
 src/main/java/kr/devport/api/
 ├── DevportApiApplication.java        # Main Spring Boot application
 ├── config/
-│   └── CorsConfig.java              # CORS configuration for React frontend
+│   ├── CorsConfig.java              # CORS configuration for React frontend
+│   └── SecurityConfig.java          # Spring Security + OAuth2 configuration
 ├── domain/
 │   ├── entity/                      # JPA entities
 │   │   ├── Article.java             # Main article entity
 │   │   ├── ArticleMetadata.java     # Embedded metadata
 │   │   ├── LLMModel.java            # LLM model entity
 │   │   ├── LLMBenchmarkScore.java   # Benchmark scores
-│   │   └── Benchmark.java           # Benchmark reference data
+│   │   ├── Benchmark.java           # Benchmark reference data
+│   │   └── User.java                # User entity for authentication
 │   └── enums/                       # Domain enums
 │       ├── ItemType.java            # REPO, BLOG, DISCUSSION
 │       ├── Source.java              # github, hackernews, reddit, etc.
 │       ├── Category.java            # AI_LLM, DEVOPS_SRE, etc.
-│       └── BenchmarkType.java       # AGENTIC_CODING, REASONING, etc.
+│       ├── BenchmarkType.java       # AGENTIC_CODING, REASONING, etc.
+│       ├── AuthProvider.java        # github, google
+│       └── UserRole.java            # USER, ADMIN
 ├── repository/                      # Spring Data JPA repositories
 │   ├── ArticleRepository.java
 │   ├── LLMModelRepository.java
 │   ├── LLMBenchmarkScoreRepository.java
-│   └── BenchmarkRepository.java
+│   ├── BenchmarkRepository.java
+│   └── UserRepository.java
+├── security/                        # Security components
+│   ├── JwtTokenProvider.java        # JWT token generation/validation
+│   ├── JwtAuthenticationFilter.java # JWT authentication filter
+│   ├── CustomUserDetails.java       # Custom user details
+│   └── oauth2/                      # OAuth2 specific classes
+│       ├── OAuth2UserInfo.java
+│       ├── GitHubOAuth2UserInfo.java
+│       ├── GoogleOAuth2UserInfo.java
+│       ├── OAuth2UserInfoFactory.java
+│       ├── CustomOAuth2UserService.java
+│       ├── OAuth2AuthenticationSuccessHandler.java
+│       └── OAuth2AuthenticationFailureHandler.java
 ├── service/                         # Business logic layer
 │   ├── ArticleService.java
-│   └── LLMRankingService.java
+│   ├── LLMRankingService.java
+│   └── AuthService.java             # Authentication service
 ├── controller/                      # REST API controllers
 │   ├── ArticleController.java
-│   └── LLMRankingController.java
+│   ├── LLMRankingController.java
+│   └── AuthController.java          # Authentication endpoints
 └── dto/
     └── response/                    # API response DTOs
         ├── ArticleResponse.java
@@ -48,7 +69,9 @@ src/main/java/kr/devport/api/
         ├── TrendingTickerResponse.java
         ├── LLMModelResponse.java
         ├── LLMRankingResponse.java
-        └── BenchmarkResponse.java
+        ├── BenchmarkResponse.java
+        ├── UserResponse.java
+        └── AuthResponse.java
 ```
 
 ## API Endpoints
@@ -81,9 +104,18 @@ GET /api/articles/trending-ticker?limit={limit}
   - `limit` (optional, default: 20): Number of articles for ticker
 - **Response:** List of trending articles for auto-scrolling ticker
 
+### Authentication
+
+#### 4. Get Current User
+```
+GET /api/auth/me
+```
+- **Headers:** `Authorization: Bearer {jwt_token}`
+- **Response:** Current authenticated user information
+
 ### LLM Rankings
 
-#### 4. Get LLM Benchmark Rankings
+#### 5. Get LLM Benchmark Rankings
 ```
 GET /api/llm-rankings?benchmark={benchmark}&limit={limit}
 ```
@@ -93,13 +125,83 @@ GET /api/llm-rankings?benchmark={benchmark}&limit={limit}
   - `limit` (optional, default: 8): Number of models to return
 - **Response:** Benchmark info + top N models with scores and ranks
 
-#### 5. Get All Benchmarks (Reference)
+#### 6. Get All Benchmarks (Reference)
 ```
 GET /api/benchmarks
 ```
 - **Response:** List of all benchmark configurations (metadata for frontend)
 
+## Authentication Flow
+
+### OAuth2 Login Flow
+
+1. **Frontend initiates login:**
+   - User clicks "Login with GitHub" or "Login with Google"
+   - Redirect to: `http://localhost:8080/oauth2/authorize/{provider}`
+   - Provider options: `github`, `google`
+
+2. **OAuth2 provider authentication:**
+   - User authenticates with GitHub/Google
+   - Provider redirects back to backend with authorization code
+
+3. **Backend processes authentication:**
+   - `CustomOAuth2UserService` loads user info from provider
+   - Creates or updates `User` entity in database
+   - `OAuth2AuthenticationSuccessHandler` generates JWT token
+
+4. **Frontend receives token:**
+   - User redirected to: `http://localhost:5173/oauth2/redirect?token={jwt_token}`
+   - Frontend stores JWT token in localStorage/sessionStorage
+
+5. **Authenticated API requests:**
+   - Frontend includes token in header: `Authorization: Bearer {jwt_token}`
+   - `JwtAuthenticationFilter` validates token
+   - Request proceeds with authenticated user context
+
+### Setting Up OAuth2 Providers
+
+#### GitHub OAuth App
+1. Go to GitHub Settings → Developer settings → OAuth Apps
+2. Create new OAuth App with:
+   - **Homepage URL:** `http://localhost:8080` (dev) or `https://devport.kr` (prod)
+   - **Authorization callback URL:** `http://localhost:8080/login/oauth2/code/github`
+3. Copy Client ID and Client Secret to `.env` file
+
+#### Google OAuth Client
+1. Go to Google Cloud Console → APIs & Services → Credentials
+2. Create OAuth 2.0 Client ID with:
+   - **Application type:** Web application
+   - **Authorized redirect URIs:** `http://localhost:8080/login/oauth2/code/google`
+3. Copy Client ID and Client Secret to `.env` file
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+Required variables:
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `GITHUB_CLIENT_ID` - GitHub OAuth client ID
+- `GITHUB_CLIENT_SECRET` - GitHub OAuth client secret
+- `JWT_SECRET` - Secret key for JWT signing (minimum 256 bits)
+
+Generate JWT secret:
+```bash
+openssl rand -base64 64
+```
+
 ## Database Schema
+
+### Users
+- **users** - User accounts from OAuth2
+  - `id`, `email`, `name`, `profile_image_url`
+  - `auth_provider` (github/google), `provider_id`
+  - `role` (USER/ADMIN)
+  - `created_at`, `updated_at`, `last_login_at`
 
 ### Articles
 - **articles** - Main article table
@@ -125,13 +227,24 @@ GET /api/benchmarks
 - H2 console enabled at `/h2-console`
 - SQL logging enabled
 - CORS enabled for `http://localhost:5173` (Vite)
+- OAuth2 redirect URI: `http://localhost:5173/oauth2/redirect`
+- JWT expiration: 24 hours
 
 ### Production (application-prod.yml)
 - PostgreSQL/MySQL database
 - SQL logging disabled
 - CORS enabled for `https://devport.kr`
+- OAuth2 redirect URI: `https://devport.kr/oauth2/redirect`
+- JWT expiration: 24 hours
 
 ## Running the Application
+
+### Prerequisites
+1. Set up environment variables (copy `.env.example` to `.env`)
+2. Configure OAuth2 apps on GitHub and Google
+3. Generate JWT secret
+
+### Run
 
 ```bash
 # Development mode
@@ -142,6 +255,9 @@ GET /api/benchmarks
 
 # Run tests
 ./gradlew test
+
+# Run with production profile
+./gradlew bootRun --args='--spring.profiles.active=prod'
 ```
 
 ## Next Steps
@@ -160,6 +276,8 @@ The React frontend expects:
 - CORS enabled for `http://localhost:5173`
 - ISO 8601 date format: `2024-01-15T10:30:00Z`
 - Pagination with `hasMore` flag for infinite scroll
+- OAuth2 login redirect to: `http://localhost:5173/oauth2/redirect?token={jwt}`
+- Authenticated requests include header: `Authorization: Bearer {jwt}`
 
 ## Notes
 
@@ -168,6 +286,10 @@ The React frontend expects:
 - Repository methods use Spring Data JPA query derivation
 - DTOs separate internal entities from API contracts
 - CORS configured for React dev server and production domain
+- OAuth2 authentication with GitHub and Google
+- Stateless JWT-based session management
+- Public endpoints: `/api/articles/**`, `/api/llm-rankings`, `/api/benchmarks`
+- Protected endpoints: `/api/auth/me` (requires authentication)
 
 ---
 
