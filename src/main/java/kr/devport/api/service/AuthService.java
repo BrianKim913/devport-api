@@ -1,8 +1,11 @@
 package kr.devport.api.service;
 
+import kr.devport.api.domain.entity.RefreshToken;
 import kr.devport.api.domain.entity.User;
+import kr.devport.api.dto.response.TokenResponse;
 import kr.devport.api.dto.response.UserResponse;
 import kr.devport.api.repository.UserRepository;
+import kr.devport.api.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenService refreshTokenService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     /**
      * Get current user information
@@ -22,6 +27,40 @@ public class AuthService {
             .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         return convertToUserResponse(user);
+    }
+
+    /**
+     * Refresh access token using refresh token
+     */
+    @Transactional
+    public TokenResponse refreshAccessToken(String refreshTokenString) {
+        RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenString)
+            .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+
+        if (!refreshTokenService.verifyRefreshToken(refreshToken)) {
+            throw new RuntimeException("Refresh token is expired or revoked");
+        }
+
+        User user = refreshToken.getUser();
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user.getId());
+
+        return TokenResponse.builder()
+            .accessToken(newAccessToken)
+            .refreshToken(refreshTokenString)
+            .tokenType("Bearer")
+            .expiresIn(3600L) // 1 hour in seconds
+            .build();
+    }
+
+    /**
+     * Logout user by revoking all refresh tokens
+     */
+    @Transactional
+    public void logout(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        refreshTokenService.deleteByUser(user);
     }
 
     /**

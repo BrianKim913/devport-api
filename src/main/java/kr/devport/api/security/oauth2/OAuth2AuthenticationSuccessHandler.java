@@ -2,8 +2,12 @@ package kr.devport.api.security.oauth2;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import kr.devport.api.domain.entity.RefreshToken;
+import kr.devport.api.domain.entity.User;
+import kr.devport.api.repository.UserRepository;
 import kr.devport.api.security.CustomUserDetails;
 import kr.devport.api.security.JwtTokenProvider;
+import kr.devport.api.service.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -18,6 +22,8 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
 
     @Value("${app.oauth2.redirect-uri}")
     private String redirectUri;
@@ -41,10 +47,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                         HttpServletResponse response,
                                         Authentication authentication) {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        String token = jwtTokenProvider.generateToken(userDetails.getId());
+
+        // Generate access token (1 hour)
+        String accessToken = jwtTokenProvider.generateAccessToken(userDetails.getId());
+
+        // Generate and save refresh token (30 days)
+        User user = userRepository.findById(userDetails.getId())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return UriComponentsBuilder.fromUriString(redirectUri)
-            .queryParam("token", token)
+            .queryParam("accessToken", accessToken)
+            .queryParam("refreshToken", refreshToken.getToken())
             .build()
             .toUriString();
     }

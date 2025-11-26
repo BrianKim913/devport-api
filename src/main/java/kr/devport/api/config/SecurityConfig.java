@@ -43,7 +43,8 @@ public class SecurityConfig {
                     "/favicon.ico",
                     "/api/articles/**",
                     "/api/llm-rankings",
-                    "/api/benchmarks"
+                    "/api/benchmarks",
+                    "/api/auth/refresh"  // Refresh token endpoint (public)
                 ).permitAll()
                 // Swagger/OpenAPI endpoints
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
