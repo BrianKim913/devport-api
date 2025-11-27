@@ -34,10 +34,12 @@ public class OpenApiConfig {
                                 "After successful authentication, you'll receive a JWT token. " +
                                 "Use this token in the Authorization header as: `Bearer {token}`\n\n" +
                                 "## OAuth2 Flow\n" +
-                                "1. Initiate login: `GET /oauth2/authorize/{provider}` (github or google)\n" +
+                                "1. Initiate login: `GET /oauth2/authorization/{provider}` (github or google)\n" +
                                 "2. User authenticates with provider\n" +
-                                "3. Callback redirects to frontend with JWT token\n" +
-                                "4. Use token for authenticated endpoints")
+                                "3. Backend issues Access Token (1h) + Refresh Token (30d)\n" +
+                                "4. Callback redirects to frontend: `/oauth2/redirect?accessToken={xxx}&refreshToken={yyy}`\n" +
+                                "5. Use access token for authenticated endpoints: `Authorization: Bearer {accessToken}`\n" +
+                                "6. Refresh token when access token expires: `POST /api/auth/refresh`")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("DevPort Team")

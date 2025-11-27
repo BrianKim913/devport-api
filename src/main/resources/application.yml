@@ -59,6 +59,10 @@ spring:
             scope:
               - user:email
               - read:user
+        provider:
+          github:
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: id
 
 # Server Configuration
 server:
@@ -70,9 +74,9 @@ server:
 logging:
   level:
     kr.devport: DEBUG
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web®: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
 
 # Application Configuration
 app:

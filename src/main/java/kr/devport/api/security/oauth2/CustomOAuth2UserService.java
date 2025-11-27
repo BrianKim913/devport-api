@@ -6,13 +6,21 @@ import kr.devport.api.domain.enums.UserRole;
 import kr.devport.api.repository.UserRepository;
 import kr.devport.api.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -25,11 +33,60 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
 
+        // For GitHub, fetch email from /user/emails if not present
+        String registrationId = userRequest.getClientRegistration().getRegistrationId();
+        if ("github".equals(registrationId) && oAuth2User.getAttribute("email") == null) {
+            String email = fetchGitHubEmail(userRequest.getAccessToken().getTokenValue());
+            if (email != null) {
+                // Add email to attributes
+                Map<String, Object> modifiedAttributes = new java.util.HashMap<>(oAuth2User.getAttributes());
+                modifiedAttributes.put("email", email);
+                oAuth2User = new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
+                    oAuth2User.getAuthorities(),
+                    modifiedAttributes,
+                    "id"
+                );
+            }
+        }
+
         return processOAuth2User(userRequest, oAuth2User);
+    }
+
+    private String fetchGitHubEmail(String accessToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(accessToken);
+            HttpEntity<?> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                "https://api.github.com/user/emails",
+                HttpMethod.GET,
+                entity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            List<Map<String, Object>> emails = response.getBody();
+            if (emails != null && !emails.isEmpty()) {
+                // Find primary email
+                for (Map<String, Object> emailData : emails) {
+                    if (Boolean.TRUE.equals(emailData.get("primary"))) {
+                        return (String) emailData.get("email");
+                    }
+                }
+                // Fallback to first email if no primary
+                return (String) emails.get(0).get("email");
+            }
+        } catch (Exception e) {
+            // Log error but don't fail authentication
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
+
         OAuth2UserInfo oAuth2UserInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(
             registrationId,
             oAuth2User.getAttributes()
