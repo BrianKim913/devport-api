@@ -509,6 +509,208 @@ public class DataInitializer implements CommandLineRunner {
                 now.minusHours(22),
                 now.minusHours(22),
                 ArticleMetadata.builder().upvotes(780).comments(94).build()
+            ),
+
+            // Database
+            createArticle(
+                ItemType.REPO, Source.github, Category.DATABASE,
+                "분산 SQL 데이터베이스, PostgreSQL 호환으로 무중단 스케일링 지원",
+                "클라우드 네이티브 아키텍처로 설계된 분산 데이터베이스로 수평 확장이 자유롭습니다.",
+                "Distributed SQL Database with PostgreSQL Compatibility and Zero-Downtime Scaling",
+                "https://github.com/example/distributed-db",
+                920,
+                List.of("database", "distributed-systems", "postgresql"),
+                now.minusHours(14),
+                now.minusHours(14),
+                ArticleMetadata.builder().stars(8500).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.BLOG, Source.devto, Category.DATABASE,
+                "PostgreSQL 인덱싱 최적화 가이드: 쿼리 성능 10배 향상시키기",
+                null,
+                "PostgreSQL Indexing Optimization Guide: 10x Query Performance Improvement",
+                "https://dev.to/example/postgres-indexing",
+                540,
+                List.of("postgresql", "indexing", "performance"),
+                now.minusHours(13),
+                now.minusHours(13),
+                ArticleMetadata.builder().readTime("9분").build()
+            ),
+
+            // Blockchain
+            createArticle(
+                ItemType.REPO, Source.github, Category.BLOCKCHAIN,
+                "Rust 기반 고성능 블록체인 노드, 이더리움 대비 50배 빠른 트랜잭션 처리",
+                null,
+                "High-Performance Blockchain Node in Rust - 50x Faster Than Ethereum",
+                "https://github.com/example/fast-blockchain",
+                1100,
+                List.of("blockchain", "rust", "web3"),
+                now.minusHours(19),
+                now.minusHours(19),
+                ArticleMetadata.builder().stars(9200).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.BLOG, Source.medium, Category.BLOCKCHAIN,
+                "스마트 컨트랙트 보안 감사 체크리스트: 해킹 사례로 배우는 취약점",
+                "실제 해킹 사례를 분석하여 스마트 컨트랙트 개발 시 주의해야 할 보안 취약점을 정리했습니다.",
+                "Smart Contract Security Audit Checklist: Learning from Hacking Cases",
+                "https://medium.com/example/smart-contract-security",
+                630,
+                List.of("blockchain", "security", "smart-contracts"),
+                now.minusHours(17),
+                now.minusHours(17),
+                ArticleMetadata.builder().readTime("11분").build()
+            ),
+
+            // Security
+            createArticle(
+                ItemType.REPO, Source.github, Category.SECURITY,
+                "오픈소스 취약점 스캐너, 코드 커밋 전 자동 보안 검사",
+                "CI/CD 파이프라인에 통합 가능한 종합 보안 취약점 검사 도구입니다.",
+                "Open Source Vulnerability Scanner for Automated Security Checks Before Commit",
+                "https://github.com/example/security-scanner",
+                1030,
+                List.of("security", "devops", "vulnerability-scanning"),
+                now.minusHours(21),
+                now.minusHours(21),
+                ArticleMetadata.builder().stars(7600).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.DISCUSSION, Source.hackernews, Category.SECURITY,
+                "제로 트러스트 아키텍처 실전 도입기: 기존 시스템 마이그레이션 전략",
+                null,
+                "Zero Trust Architecture in Production: Migration Strategy from Legacy Systems",
+                "https://news.ycombinator.com/item?id=123459",
+                870,
+                List.of("zero-trust", "security", "architecture"),
+                now.minusHours(25),
+                now.minusHours(25),
+                ArticleMetadata.builder().comments(167).build()
+            ),
+
+            // Data Science
+            createArticle(
+                ItemType.REPO, Source.github, Category.DATA_SCIENCE,
+                "Python 데이터 파이프라인 프레임워크, Airflow보다 가볍고 빠른 대안",
+                null,
+                "Lightweight Python Data Pipeline Framework - A Faster Alternative to Airflow",
+                "https://github.com/example/data-pipeline",
+                810,
+                List.of("data-engineering", "python", "etl"),
+                now.minusHours(27),
+                now.minusHours(27),
+                ArticleMetadata.builder().stars(5900).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.BLOG, Source.hashnode, Category.DATA_SCIENCE,
+                "대규모 데이터셋 전처리 최적화: Pandas vs Polars 성능 비교",
+                "10GB 이상의 대용량 데이터 처리 시 Pandas와 Polars의 성능을 실측했습니다.",
+                "Large-Scale Data Preprocessing Optimization: Pandas vs Polars Performance",
+                "https://hashnode.com/example/pandas-vs-polars",
+                690,
+                List.of("data-science", "pandas", "polars"),
+                now.minusHours(23),
+                now.minusHours(23),
+                ArticleMetadata.builder().readTime("13분").build()
+            ),
+
+            // Architecture
+            createArticle(
+                ItemType.BLOG, Source.medium, Category.ARCHITECTURE,
+                "마이크로서비스에서 모놀리스로: 역전환 사례 연구",
+                "스타트업이 과도한 마이크로서비스 아키텍처에서 모놀리스로 돌아온 과정을 소개합니다.",
+                "From Microservices Back to Monolith: A Case Study of Reverse Migration",
+                "https://medium.com/example/microservices-to-monolith",
+                1190,
+                List.of("architecture", "microservices", "monolith"),
+                now.minusHours(5),
+                now.minusHours(5),
+                ArticleMetadata.builder().readTime("14분").build()
+            ),
+
+            createArticle(
+                ItemType.DISCUSSION, Source.hackernews, Category.ARCHITECTURE,
+                "이벤트 드리븐 아키텍처의 복잡성: 언제 사용하고 언제 피해야 할까",
+                null,
+                "The Complexity of Event-Driven Architecture: When to Use and When to Avoid",
+                "https://news.ycombinator.com/item?id=123460",
+                950,
+                List.of("event-driven", "architecture", "system-design"),
+                now.minusHours(28),
+                now.minusHours(28),
+                ArticleMetadata.builder().comments(223).build()
+            ),
+
+            // Mobile
+            createArticle(
+                ItemType.REPO, Source.github, Category.MOBILE,
+                "크로스 플랫폼 모바일 프레임워크, 네이티브 수준 성능 달성",
+                "Flutter와 React Native의 단점을 극복한 새로운 크로스 플랫폼 프레임워크입니다.",
+                "Cross-Platform Mobile Framework with Native-Level Performance",
+                "https://github.com/example/mobile-framework",
+                1070,
+                List.of("mobile", "cross-platform", "flutter"),
+                now.minusHours(30),
+                now.minusHours(30),
+                ArticleMetadata.builder().stars(11200).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.BLOG, Source.devto, Category.MOBILE,
+                "iOS 앱 메모리 최적화 테크닉: 크래시 없는 안정적인 앱 만들기",
+                null,
+                "iOS App Memory Optimization Techniques: Building Crash-Free Stable Apps",
+                "https://dev.to/example/ios-memory-optimization",
+                580,
+                List.of("ios", "swift", "performance"),
+                now.minusHours(32),
+                now.minusHours(32),
+                ArticleMetadata.builder().readTime("10분").build()
+            ),
+
+            // Frontend
+            createArticle(
+                ItemType.REPO, Source.github, Category.FRONTEND,
+                "Next.js 15 기반 대시보드 템플릿, 실시간 데이터 시각화 지원",
+                null,
+                "Next.js 15 Dashboard Template with Real-Time Data Visualization",
+                "https://github.com/example/nextjs-dashboard",
+                940,
+                List.of("nextjs", "react", "dashboard"),
+                now.minusHours(26),
+                now.minusHours(26),
+                ArticleMetadata.builder().stars(6800).language("English").build()
+            ),
+
+            createArticle(
+                ItemType.BLOG, Source.medium, Category.FRONTEND,
+                "React 성능 최적화 완벽 가이드: 렌더링 최소화 전략",
+                "불필요한 리렌더링을 방지하고 초기 로딩 속도를 개선하는 실전 테크닉을 소개합니다.",
+                "Complete React Performance Optimization Guide: Minimizing Render Strategies",
+                "https://medium.com/example/react-performance",
+                770,
+                List.of("react", "performance", "optimization"),
+                now.minusHours(29),
+                now.minusHours(29),
+                ArticleMetadata.builder().readTime("16분").build()
+            ),
+
+            createArticle(
+                ItemType.DISCUSSION, Source.reddit, Category.FRONTEND,
+                "Tailwind CSS vs CSS Modules: 2025년 실전 비교",
+                null,
+                "Tailwind CSS vs CSS Modules: A Practical Comparison in 2025",
+                "https://reddit.com/r/webdev/comments/example4",
+                820,
+                List.of("tailwind", "css", "frontend"),
+                now.minusHours(31),
+                now.minusHours(31),
+                ArticleMetadata.builder().upvotes(920).comments(178).build()
             )
         );
 

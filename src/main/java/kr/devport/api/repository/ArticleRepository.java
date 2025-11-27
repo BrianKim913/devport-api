@@ -26,5 +26,5 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     Page<Article> findBySourceOrderByScoreDesc(Source source, Pageable pageable);
 
     // Find top N articles for trending ticker
-    List<Article> findTopByOrderByScoreDescCreatedAtSourceDesc(Pageable pageable);
+    List<Article> findAllByOrderByScoreDescCreatedAtSourceDesc(Pageable pageable);
 }

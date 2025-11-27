@@ -90,7 +90,7 @@ public class ArticleService {
     public List<TrendingTickerResponse> getTrendingTicker(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
 
-        List<Article> articles = articleRepository.findTopByOrderByScoreDescCreatedAtSourceDesc(pageable);
+        List<Article> articles = articleRepository.findAllByOrderByScoreDescCreatedAtSourceDesc(pageable);
 
         return articles.stream()
             .map(this::convertToTrendingTickerResponse)
