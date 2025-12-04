@@ -54,25 +54,6 @@ public class ArticleController {
     }
 
     @Operation(
-        summary = "Get GitHub trending repositories",
-        description = "Retrieve currently trending repositories from GitHub"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Successfully retrieved GitHub trending repositories"
-        )
-    })
-    @GetMapping("/github-trending")
-    public ResponseEntity<List<ArticleResponse>> getGitHubTrending(
-        @Parameter(description = "Number of trending repos to return")
-        @RequestParam(defaultValue = "10") int limit
-    ) {
-        List<ArticleResponse> response = articleService.getGitHubTrending(limit);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(
         summary = "Get trending ticker articles",
         description = "Retrieve trending articles for the ticker display"
     )

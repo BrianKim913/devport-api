@@ -29,6 +29,7 @@ public class ArticleService {
 
     /**
      * Get articles with pagination and optional category filtering
+     * Caches the response DTOs (not entities) to avoid lazy-loading issues
      *
      * @param category Category filter (null for ALL)
      * @param page Page number
@@ -56,6 +57,8 @@ public class ArticleService {
             articlePage = articleRepository.findByCategory(category, pageable);
         }
 
+        // Convert entities to DTOs BEFORE caching
+        // This ensures we cache fully-initialized DTOs, not lazy entities
         return ArticlePageResponse.builder()
             .content(articlePage.getContent().stream()
                 .map(this::convertToArticleResponse)
@@ -67,28 +70,10 @@ public class ArticleService {
             .build();
     }
 
-    /**
-     * Get GitHub trending repositories
-     *
-     * @param limit Number of repos to return
-     * @return List of GitHub article responses
-     */
-    @Cacheable(value = "githubTrending", key = "#limit")
-    public List<ArticleResponse> getGitHubTrending(int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
-
-        Page<Article> githubRepos = articleRepository.findBySourceOrderByScoreDesc(
-            Source.github,
-            pageable
-        );
-
-        return githubRepos.getContent().stream()
-            .map(this::convertToArticleResponse)
-            .collect(Collectors.toList());
-    }
 
     /**
      * Get trending ticker articles
+     * Caches the response DTOs (not entities) to avoid lazy-loading issues
      *
      * @param limit Number of articles for ticker
      * @return List of trending ticker responses
@@ -99,6 +84,7 @@ public class ArticleService {
 
         List<Article> articles = articleRepository.findAllByOrderByScoreDescCreatedAtSourceDesc(pageable);
 
+        // Convert entities to DTOs BEFORE caching
         return articles.stream()
             .map(this::convertToTrendingTickerResponse)
             .collect(Collectors.toList());
@@ -106,6 +92,7 @@ public class ArticleService {
 
     /**
      * Convert Article entity to ArticleResponse DTO
+     * Creates new collections to avoid Hibernate lazy-loading issues
      */
     private ArticleResponse convertToArticleResponse(Article article) {
         return ArticleResponse.builder()
@@ -118,7 +105,7 @@ public class ArticleService {
             .titleEn(article.getTitleEn())
             .url(article.getUrl())
             .score(article.getScore())
-            .tags(article.getTags())
+            .tags(article.getTags() != null ? new java.util.ArrayList<>(article.getTags()) : new java.util.ArrayList<>())
             .createdAtSource(article.getCreatedAtSource())
             .metadata(convertToMetadataResponse(article))
             .build();
