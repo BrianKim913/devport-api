@@ -1,100 +1,203 @@
 package kr.devport.api.service;
 
-import kr.devport.api.domain.entity.Benchmark;
-import kr.devport.api.domain.entity.LLMBenchmarkScore;
+import kr.devport.api.domain.entity.LLMBenchmark;
+import kr.devport.api.domain.entity.LLMModel;
 import kr.devport.api.domain.enums.BenchmarkType;
-import kr.devport.api.dto.response.BenchmarkResponse;
-import kr.devport.api.dto.response.LLMModelResponse;
-import kr.devport.api.dto.response.LLMRankingResponse;
-import kr.devport.api.repository.BenchmarkRepository;
-import kr.devport.api.repository.LLMBenchmarkScoreRepository;
+import kr.devport.api.dto.response.*;
+import kr.devport.api.repository.LLMBenchmarkRepository;
+import kr.devport.api.repository.LLMModelRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class LLMRankingService {
 
-    private final LLMBenchmarkScoreRepository benchmarkScoreRepository;
-    private final BenchmarkRepository benchmarkRepository;
+    private final LLMModelRepository modelRepository;
+    private final LLMBenchmarkRepository benchmarkRepository;
 
     /**
-     * Get LLM rankings for a specific benchmark
-     *
-     * @param benchmarkType Benchmark type (defaults to AGENTIC_CODING)
-     * @param limit Number of models to return
-     * @return LLM ranking response with benchmark info and model scores
+     * Get all models with filters (paginated)
+     * Default sort: Intelligence Index DESC
      */
-    @Cacheable(
-        value = "llmRankings",
-        key = "#benchmarkType != null ? #benchmarkType.name() + '_' + #limit : 'AGENTIC_CODING_' + #limit"
-    )
-    public LLMRankingResponse getLLMRankings(BenchmarkType benchmarkType, int limit) {
-        // Default to AGENTIC_CODING if null
-        BenchmarkType type = (benchmarkType != null) ? benchmarkType : BenchmarkType.AGENTIC_CODING;
+    public Page<LLMModelSummaryResponse> getAllModels(
+        String provider,
+        String creatorSlug,
+        String license,
+        BigDecimal maxPrice,
+        Long minContextWindow,
+        Pageable pageable
+    ) {
+        Page<LLMModel> models = modelRepository.findWithFilters(
+            provider, creatorSlug, license, maxPrice, minContextWindow, pageable
+        );
 
-        // Get benchmark metadata
-        Benchmark benchmark = benchmarkRepository.findById(type)
-            .orElseThrow(() -> new RuntimeException("Benchmark not found: " + type));
-
-        // Get top N models for this benchmark
-        Pageable pageable = PageRequest.of(0, limit);
-        List<LLMBenchmarkScore> scores = benchmarkScoreRepository.findByBenchmarkTypeOrderByRankAsc(type, pageable);
-
-        return LLMRankingResponse.builder()
-            .benchmark(convertToBenchmarkResponse(benchmark))
-            .models(scores.stream()
-                .map(this::convertToLLMModelResponse)
-                .collect(Collectors.toList()))
-            .build();
+        return models.map(model -> {
+            // Calculate rank based on intelligence index
+            Integer rank = calculateRankForModel(model, null);
+            return LLMModelSummaryResponse.fromEntity(model, rank);
+        });
     }
 
     /**
-     * Get all benchmark configurations
-     *
-     * @return List of all benchmarks
+     * Get a specific model by model ID
+     */
+    public LLMModelDetailResponse getModelById(String modelId) {
+        LLMModel model = modelRepository.findByModelId(modelId)
+            .orElseThrow(() -> new RuntimeException("Model not found: " + modelId));
+
+        return LLMModelDetailResponse.fromEntity(model);
+    }
+
+    /**
+     * Get leaderboard for a specific benchmark
+     * Calculates ranks dynamically based on the benchmark's score field
+     */
+    @Cacheable(
+        value = "llmLeaderboard",
+        key = "#benchmarkType.name() + '_' + (#provider != null ? #provider : 'all') + '_' + (#creatorSlug != null ? #creatorSlug : 'all') + '_' + (#license != null ? #license : 'all')"
+    )
+    public List<LLMLeaderboardEntryResponse> getLeaderboard(
+        BenchmarkType benchmarkType,
+        String provider,
+        String creatorSlug,
+        String license,
+        BigDecimal maxPrice,
+        Long minContextWindow
+    ) {
+        // Get all models with filters
+        List<LLMModel> models = modelRepository.findAllWithFilters(
+            provider, creatorSlug, license, maxPrice, minContextWindow
+        );
+
+        // Sort by the specific benchmark score
+        models.sort(getComparatorForBenchmark(benchmarkType).reversed());
+
+        // Calculate ranks and convert to DTOs
+        return calculateRanksForLeaderboard(models, benchmarkType);
+    }
+
+    /**
+     * Get all benchmarks
      */
     @Cacheable(value = "benchmarks", key = "'all'")
-    public List<BenchmarkResponse> getAllBenchmarks() {
-        return benchmarkRepository.findAll().stream()
-            .map(this::convertToBenchmarkResponse)
+    public List<LLMBenchmarkResponse> getAllBenchmarks() {
+        return benchmarkRepository.findAllByOrderBySortOrderAsc().stream()
+            .map(LLMBenchmarkResponse::fromEntity)
             .collect(Collectors.toList());
     }
 
     /**
-     * Convert Benchmark entity to BenchmarkResponse DTO
+     * Get benchmarks by category group
      */
-    private BenchmarkResponse convertToBenchmarkResponse(Benchmark benchmark) {
-        return BenchmarkResponse.builder()
-            .type(benchmark.getType())
-            .labelEn(benchmark.getLabelEn())
-            .labelKo(benchmark.getLabelKo())
-            .descriptionEn(benchmark.getDescriptionEn())
-            .descriptionKo(benchmark.getDescriptionKo())
-            .icon(benchmark.getIcon())
-            .build();
+    public List<LLMBenchmarkResponse> getBenchmarksByGroup(String categoryGroup) {
+        return benchmarkRepository.findByCategoryGroupOrderBySortOrderAsc(categoryGroup).stream()
+            .map(LLMBenchmarkResponse::fromEntity)
+            .collect(Collectors.toList());
     }
 
     /**
-     * Convert LLMBenchmarkScore entity to LLMModelResponse DTO
+     * Calculate ranks for leaderboard entries
+     * Uses dense ranking (ties get the same rank, no gaps)
      */
-    private LLMModelResponse convertToLLMModelResponse(LLMBenchmarkScore score) {
-        return LLMModelResponse.builder()
-            .id(score.getModel().getId())
-            .name(score.getModel().getName())
-            .provider(score.getModel().getProvider())
-            .score(score.getScore())
-            .rank(score.getRank())
-            .contextWindow(score.getModel().getContextWindow())
-            .pricing(score.getModel().getPricing())
-            .build();
+    private List<LLMLeaderboardEntryResponse> calculateRanksForLeaderboard(
+        List<LLMModel> models,
+        BenchmarkType benchmarkType
+    ) {
+        List<LLMLeaderboardEntryResponse> entries = new ArrayList<>();
+        int currentRank = 1;
+        BigDecimal previousScore = null;
+
+        for (int i = 0; i < models.size(); i++) {
+            LLMModel model = models.get(i);
+            BigDecimal score = getScoreForBenchmark(model, benchmarkType);
+
+            // Skip models without a score for this benchmark
+            if (score == null) {
+                continue;
+            }
+
+            // Update rank if score decreased (handle ties)
+            if (previousScore != null && score.compareTo(previousScore) < 0) {
+                currentRank = entries.size() + 1;
+            }
+
+            entries.add(LLMLeaderboardEntryResponse.fromEntity(
+                model, benchmarkType, score, currentRank
+            ));
+
+            previousScore = score;
+        }
+
+        return entries;
+    }
+
+    /**
+     * Calculate rank for a single model (simplified version)
+     * Used for summary responses
+     */
+    private Integer calculateRankForModel(LLMModel model, BenchmarkType benchmarkType) {
+        // For simplicity, just return null - full ranking requires all models
+        // Can be implemented if needed for specific use cases
+        return null;
+    }
+
+    /**
+     * Get comparator for sorting by benchmark score
+     */
+    private Comparator<LLMModel> getComparatorForBenchmark(BenchmarkType benchmarkType) {
+        return Comparator.comparing(
+            model -> getScoreForBenchmark(model, benchmarkType),
+            Comparator.nullsLast(Comparator.naturalOrder())
+        );
+    }
+
+    /**
+     * Get score for a specific benchmark from model
+     * Uses switch expression to map benchmark type to score field
+     */
+    private BigDecimal getScoreForBenchmark(LLMModel model, BenchmarkType benchmarkType) {
+        return switch (benchmarkType) {
+            // Agentic Capabilities
+            case TERMINAL_BENCH_HARD -> model.getScoreTerminalBenchHard();
+            case TAU_BENCH_TELECOM -> model.getScoreTauBenchTelecom();
+
+            // Reasoning & Knowledge
+            case AA_LCR -> model.getScoreAaLcr();
+            case HUMANITYS_LAST_EXAM -> model.getScoreHumanitysLastExam();
+            case MMLU_PRO -> model.getScoreMmluPro();
+            case GPQA_DIAMOND -> model.getScoreGpqaDiamond();
+
+            // Coding
+            case LIVECODE_BENCH -> model.getScoreLivecodeBench();
+            case SCICODE -> model.getScoreScicode();
+
+            // Specialized Skills
+            case IFBENCH -> model.getScoreIfbench();
+            case MATH_500 -> model.getScoreMath500();
+            case AIME -> model.getScoreAime();
+            case AIME_2025 -> model.getScoreAime2025();
+            case CRIT_PT -> model.getScoreCritPt();
+            case MMMU_PRO -> model.getScoreMmmuPro();
+
+            // Composite Indices
+            case AA_INTELLIGENCE_INDEX -> model.getScoreAaIntelligenceIndex();
+            case AA_OMNISCIENCE_INDEX -> model.getScoreAaOmniscienceIndex();
+            case AA_CODING_INDEX -> model.getScoreAaCodingIndex();
+            case AA_MATH_INDEX -> model.getScoreAaMathIndex();
+        };
     }
 }

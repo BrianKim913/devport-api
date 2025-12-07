@@ -46,8 +46,9 @@ public class SecurityConfig {
                     "/favicon.ico",
                     "/api/articles/**",
                     "/api/git-repos/**",
-                    "/api/llm-rankings",
-                    "/api/benchmarks",
+                    "/api/llm/**",  // All LLM endpoints (new structure)
+                    "/api/llm-rankings",  // @Deprecated - kept for backward compatibility
+                    "/api/benchmarks",  // @Deprecated - kept for backward compatibility
                     "/api/auth/refresh"  // Refresh token endpoint (public)
                 ).permitAll()
                 // Swagger/OpenAPI endpoints
