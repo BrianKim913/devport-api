@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class ModelCreatorResponse {
 
     private Long id;
+    private String externalId;  // UUID from API
     private String slug;        // e.g., "openai", "anthropic", "alibaba"
     private String name;        // e.g., "OpenAI", "Anthropic", "Alibaba"
 
@@ -29,6 +30,7 @@ public class ModelCreatorResponse {
 
         return ModelCreatorResponse.builder()
                 .id(modelCreator.getId())
+                .externalId(modelCreator.getExternalId())
                 .slug(modelCreator.getSlug())
                 .name(modelCreator.getName())
                 .build();
