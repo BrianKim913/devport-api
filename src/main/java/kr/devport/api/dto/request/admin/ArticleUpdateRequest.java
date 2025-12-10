@@ -2,7 +2,6 @@ package kr.devport.api.dto.request.admin;
 
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
-import kr.devport.api.domain.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +17,7 @@ import java.util.List;
 public class ArticleUpdateRequest {
 
     private ItemType itemType;
-    private Source source;
+    private String source;
     private Category category;
     private String summaryKoTitle;
     private String summaryKoBody;

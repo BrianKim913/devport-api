@@ -2,7 +2,6 @@ package kr.devport.api.service;
 
 import kr.devport.api.domain.entity.Article;
 import kr.devport.api.domain.enums.Category;
-import kr.devport.api.domain.enums.Source;
 import kr.devport.api.dto.response.ArticleMetadataResponse;
 import kr.devport.api.dto.response.ArticlePageResponse;
 import kr.devport.api.dto.response.ArticleResponse;

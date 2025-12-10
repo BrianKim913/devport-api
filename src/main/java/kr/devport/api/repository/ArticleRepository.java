@@ -2,7 +2,6 @@ package kr.devport.api.repository;
 
 import kr.devport.api.domain.entity.Article;
 import kr.devport.api.domain.enums.Category;
-import kr.devport.api.domain.enums.Source;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,9 +16,9 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     Page<Article> findByCategory(Category category, Pageable pageable);
 
-    Page<Article> findBySource(Source source, Pageable pageable);
+    Page<Article> findBySource(String source, Pageable pageable);
 
-    Page<Article> findBySourceOrderByScoreDesc(Source source, Pageable pageable);
+    Page<Article> findBySourceOrderByScoreDesc(String source, Pageable pageable);
 
     List<Article> findAllByOrderByScoreDescCreatedAtSourceDesc(Pageable pageable);
 }

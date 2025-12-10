@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
-import kr.devport.api.domain.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,8 +21,8 @@ public class ArticleCreateRequest {
     @NotNull(message = "Item type is required")
     private ItemType itemType;
 
-    @NotNull(message = "Source is required")
-    private Source source;
+    @NotBlank(message = "Source is required")
+    private String source;
 
     @NotNull(message = "Category is required")
     private Category category;

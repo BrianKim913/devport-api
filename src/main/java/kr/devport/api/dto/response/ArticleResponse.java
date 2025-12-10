@@ -3,7 +3,6 @@ package kr.devport.api.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
-import kr.devport.api.domain.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,8 +26,8 @@ public class ArticleResponse {
     @Schema(description = "Content item type", example = "ARTICLE")
     private ItemType itemType;
 
-    @Schema(description = "Content source", example = "GITHUB")
-    private Source source;
+    @Schema(description = "Content source", example = "github")
+    private String source;
 
     @Schema(description = "Content category", example = "AI_LLM")
     private Category category;

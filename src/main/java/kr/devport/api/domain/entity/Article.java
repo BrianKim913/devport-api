@@ -14,7 +14,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
-import kr.devport.api.domain.enums.Source;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,9 +41,8 @@ public class Article {
     @Column(nullable = false, name = "item_type")
     private ItemType itemType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Source source;
+    @Column(nullable = false, length = 100)
+    private String source;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
