@@ -14,9 +14,9 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
@@ -67,7 +67,7 @@ public class RedisConfig {
             .build();
     }
 
-    private GenericJackson2JsonRedisSerializer jsonRedisSerializer() {
+    private RedisSerializer<Object> jsonRedisSerializer() {
         ObjectMapper objectMapper = new ObjectMapper();
 
         objectMapper.registerModule(new JavaTimeModule());
@@ -83,6 +83,30 @@ public class RedisConfig {
             JsonTypeInfo.As.PROPERTY
         );
 
-        return new GenericJackson2JsonRedisSerializer(objectMapper);
+        return new RedisSerializer<Object>() {
+            @Override
+            public byte[] serialize(Object value) throws SerializationException {
+                if (value == null) {
+                    return new byte[0];
+                }
+                try {
+                    return objectMapper.writeValueAsBytes(value);
+                } catch (Exception e) {
+                    throw new SerializationException("Could not serialize: " + e.getMessage(), e);
+                }
+            }
+
+            @Override
+            public Object deserialize(byte[] bytes) throws SerializationException {
+                if (bytes == null || bytes.length == 0) {
+                    return null;
+                }
+                try {
+                    return objectMapper.readValue(bytes, Object.class);
+                } catch (Exception e) {
+                    throw new SerializationException("Could not deserialize: " + e.getMessage(), e);
+                }
+            }
+        };
     }
 }
