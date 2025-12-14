@@ -59,7 +59,7 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-graalvmNative {
+graalvmNative { //nativeCompile에서만 적용, 
 	binaries {
 		main {
 			imageName = 'devport-api'
@@ -69,7 +69,7 @@ graalvmNative {
 			buildArgs.add('-H:+ReportExceptionStackTraces')
 
 			buildArgs.add('--gc=serial')
-			buildArgs.add('-J-Xmx4g')  // Max heap for build process
+			buildArgs.add('-J-Xmx4g')
 
 			buildArgs.add('--exclude-config')
 			buildArgs.add('org\\.springdoc.*')

@@ -1,4 +1,4 @@
-name: Build and Push Native Image
+name: Build and Push Native Image (arm64)
 
 on:
   push:
@@ -10,11 +10,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: devport-api-native-arm64
 
 jobs:
   build-native-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
