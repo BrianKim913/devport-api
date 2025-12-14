@@ -83,6 +83,7 @@ tasks.named('bootBuildImage') {
 
 	// buildJvm property가 있을 경우 일반 JVM
 	if (project.hasProperty('buildJvm')) {
-		environment = ['BP_NATIVE_IMAGE': 'false']
+		builder = 'paketobuildpacks/builder-jammy-base:latest'
+		environment = ['BP_JVM_VERSION': '25']
 	}
 }
