@@ -50,6 +50,12 @@ logging:
     org.springframework.cache: TRACE
     org.springframework.data.redis: DEBUG
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 cloudflare:
   turnstile:
     secret-key: ${CLOUDFLARE_TURNSTILE_SECRET_KEY:your_secret_key_here}

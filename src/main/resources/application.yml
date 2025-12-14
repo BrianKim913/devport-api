@@ -92,6 +92,12 @@ logging:
     org.springframework.cache: TRACE
     org.springframework.data.redis: DEBUG
 
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 app:
   jwt:
     secret: ${JWT_SECRET:dGhpc2lzYXZlcnlzZWN1cmVzZWNyZXRrZXlmb3JkZXZwb3J0YXBpanRva2VuZ2VuZXJhdGlvbnRoYXRzaG91bGRiZWNoYW5nZWRpbnByb2R1Y3Rpb24=}
