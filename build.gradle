@@ -2,7 +2,12 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.0'
 	id 'io.spring.dependency-management' version '1.1.7'
-	id 'org.graalvm.buildtools.native' version '0.11.3'
+	id 'org.graalvm.buildtools.native' version '0.11.3' apply false
+}
+
+// native image 빌드시에만 GraalVM 적용
+if (!project.hasProperty('buildJvm')) {
+	apply plugin: 'org.graalvm.buildtools.native'
 }
 
 group = 'kr.devport.backend'
@@ -59,24 +64,6 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-graalvmNative { //nativeCompile에서만 적용, 
-	binaries {
-		main {
-			imageName = 'devport-api'
-			mainClass = 'kr.devport.api.DevportApiApplication'
-
-			buildArgs.add('--verbose')
-			buildArgs.add('-H:+ReportExceptionStackTraces')
-
-			buildArgs.add('--gc=serial')
-			buildArgs.add('-J-Xmx4g')
-
-			buildArgs.add('--exclude-config')
-			buildArgs.add('org\\.springdoc.*')
-			buildArgs.add('--initialize-at-build-time=org.slf4j')
-		}
-	}
-}
 
 tasks.named('bootBuildImage') {
 	imageName = "devport-api:${project.version}"
@@ -87,6 +74,13 @@ tasks.named('bootBuildImage') {
 		environment = [
 			'BP_JVM_VERSION': '25',
 			'BP_NATIVE_IMAGE': 'false'
+		]
+		buildpacks = [
+			'gcr.io/paketo-buildpacks/ca-certificates',
+			'gcr.io/paketo-buildpacks/bellsoft-liberica',
+			'gcr.io/paketo-buildpacks/syft',
+			'gcr.io/paketo-buildpacks/executable-jar',
+			'gcr.io/paketo-buildpacks/spring-boot'
 		]
 	}
 }
