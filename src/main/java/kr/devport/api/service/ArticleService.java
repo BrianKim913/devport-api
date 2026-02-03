@@ -3,6 +3,8 @@ package kr.devport.api.service;
 import kr.devport.api.domain.entity.Article;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.dto.request.ArticleSearchCondition;
+import kr.devport.api.dto.response.ArticleAutocompleteListResponse;
+import kr.devport.api.dto.response.ArticleAutocompleteResponse;
 import kr.devport.api.dto.response.ArticleDetailResponse;
 import kr.devport.api.dto.response.ArticleMetadataResponse;
 import kr.devport.api.dto.response.ArticlePageResponse;
@@ -152,6 +154,67 @@ public class ArticleService {
             .upvotes(article.getMetadata().getUpvotes())
             .readTime(article.getMetadata().getReadTime())
             .language(article.getMetadata().getLanguage())
+            .build();
+    }
+
+    // ========== Autocomplete/Fulltext Search Methods ==========
+
+    /**
+     * 자동완성 검색 - 상위 5개 결과 반환
+     * - 제목 매칭 우선
+     * - 최신순 2차 정렬
+     * - 총 검색 결과 수 포함 ("전체 X개 결과 보기" UI용)
+     */
+    public ArticleAutocompleteListResponse searchAutocomplete(String query) {
+        List<Article> articles = articleRepository.searchAutocomplete(query, 5);
+        Long totalMatches = articleRepository.countFulltextMatches(query);
+
+        List<ArticleAutocompleteResponse> suggestions = articles.stream()
+            .map(article -> convertToAutocompleteResponse(article, query))
+            .collect(Collectors.toList());
+
+        return ArticleAutocompleteListResponse.builder()
+            .suggestions(suggestions)
+            .totalMatches(totalMatches != null ? totalMatches : 0L)
+            .build();
+    }
+
+    /**
+     * 전체 텍스트 검색 - 페이지네이션 결과 반환
+     * - 제목 매칭 우선
+     * - 최신순 2차 정렬
+     */
+    public ArticlePageResponse searchFulltext(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Article> articlePage = articleRepository.searchFulltext(query, pageable);
+
+        return ArticlePageResponse.builder()
+            .content(articlePage.getContent().stream()
+                .map(this::convertToArticleResponse)
+                .collect(Collectors.toList()))
+            .totalElements(articlePage.getTotalElements())
+            .totalPages(articlePage.getTotalPages())
+            .currentPage(articlePage.getNumber())
+            .hasMore(articlePage.hasNext())
+            .build();
+    }
+
+    private ArticleAutocompleteResponse convertToAutocompleteResponse(Article article, String query) {
+        String searchTerm = query.trim().toLowerCase();
+        ArticleAutocompleteResponse.MatchType matchType =
+            article.getSummaryKoTitle() != null &&
+            article.getSummaryKoTitle().toLowerCase().contains(searchTerm)
+                ? ArticleAutocompleteResponse.MatchType.TITLE
+                : ArticleAutocompleteResponse.MatchType.BODY;
+
+        return ArticleAutocompleteResponse.builder()
+            .externalId(article.getExternalId())
+            .summaryKoTitle(article.getSummaryKoTitle())
+            .source(article.getSource())
+            .category(article.getCategory() != null ? article.getCategory().name() : null)
+            .matchType(matchType)
+            .score(article.getScore())
             .build();
     }
 }

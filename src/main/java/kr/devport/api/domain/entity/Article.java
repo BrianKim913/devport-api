@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -27,7 +28,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "articles")
+@Table(name = "articles", indexes = {
+    @Index(name = "idx_articles_summary_ko_title", columnList = "summary_ko_title"),
+    @Index(name = "idx_articles_created_at_source", columnList = "created_at_source")
+})
 @Getter
 @Setter
 @NoArgsConstructor

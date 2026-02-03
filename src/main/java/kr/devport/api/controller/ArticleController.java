@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
 import kr.devport.api.dto.request.ArticleSearchCondition;
+import kr.devport.api.dto.response.ArticleAutocompleteListResponse;
 import kr.devport.api.dto.response.ArticleDetailResponse;
 import kr.devport.api.dto.response.ArticlePageResponse;
 import kr.devport.api.dto.response.ArticleResponse;
@@ -142,6 +143,66 @@ public class ArticleController {
             .build();
 
         ArticlePageResponse response = articleService.searchArticles(condition, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "Autocomplete search suggestions",
+        description = "Get top 5 lightweight article suggestions for autocomplete dropdown. " +
+            "Title matches are prioritized over body matches. Minimum 2 characters required."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successfully retrieved autocomplete suggestions",
+            content = @Content(schema = @Schema(implementation = ArticleAutocompleteListResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Query too short (minimum 2 characters)"
+        )
+    })
+    @GetMapping("/autocomplete")
+    public ResponseEntity<ArticleAutocompleteListResponse> autocomplete(
+        @Parameter(description = "Search query (minimum 2 characters)", example = "React")
+        @RequestParam("q") String query
+    ) {
+        if (query == null || query.trim().length() < 2) {
+            return ResponseEntity.badRequest().build();
+        }
+        ArticleAutocompleteListResponse response = articleService.searchAutocomplete(query);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "Full-text search with pagination",
+        description = "Search articles by title and body content. " +
+            "Title matches are prioritized, sorted by recency. Minimum 2 characters required."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successfully retrieved search results",
+            content = @Content(schema = @Schema(implementation = ArticlePageResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Query too short (minimum 2 characters)"
+        )
+    })
+    @GetMapping("/search/fulltext")
+    public ResponseEntity<ArticlePageResponse> searchFulltext(
+        @Parameter(description = "Search query (minimum 2 characters)", example = "AI")
+        @RequestParam("q") String query,
+        @Parameter(description = "Page number (0-indexed)")
+        @RequestParam(defaultValue = "0") int page,
+        @Parameter(description = "Number of items per page")
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        if (query == null || query.trim().length() < 2) {
+            return ResponseEntity.badRequest().build();
+        }
+        ArticlePageResponse response = articleService.searchFulltext(query, page, size);
         return ResponseEntity.ok(response);
     }
 
