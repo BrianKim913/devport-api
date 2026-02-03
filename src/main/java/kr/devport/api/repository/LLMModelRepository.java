@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LLMModelRepository extends JpaRepository<LLMModel, Long> {
+public interface LLMModelRepository extends JpaRepository<LLMModel, Long>, LLMModelRepositoryCustom {
 
     Optional<LLMModel> findByModelId(String modelId);
 

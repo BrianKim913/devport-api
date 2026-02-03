@@ -8,8 +8,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.devport.api.domain.enums.BenchmarkType;
+import kr.devport.api.dto.request.LLMModelSearchCondition;
 import kr.devport.api.dto.response.*;
 import kr.devport.api.service.LLMRankingService;
+
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,6 +89,64 @@ public class LLMRankingController {
     ) {
         LLMModelDetailResponse model = llmRankingService.getModelById(modelId);
         return ResponseEntity.ok(model);
+    }
+
+    @Operation(
+        summary = "Search LLM models with extended filters (QueryDSL)",
+        description = "Advanced search with 9 optional filters including keyword search and date range. Uses QueryDSL for type-safe dynamic query building with LEFT JOIN FETCH to prevent N+1 queries."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successfully retrieved LLM models matching search criteria",
+            content = @Content(schema = @Schema(implementation = Page.class))
+        )
+    })
+    @GetMapping("/models/search")
+    public ResponseEntity<Page<LLMModelSummaryResponse>> searchModels(
+        @Parameter(description = "Filter by provider (legacy field)")
+        @RequestParam(required = false) String provider,
+
+        @Parameter(description = "Filter by model creator slug (e.g., 'openai', 'anthropic')")
+        @RequestParam(required = false) String creatorSlug,
+
+        @Parameter(description = "Filter by license ('Open' or 'Proprietary')")
+        @RequestParam(required = false) String license,
+
+        @Parameter(description = "Maximum blended price (USD per 1M tokens)")
+        @RequestParam(required = false) BigDecimal maxPrice,
+
+        @Parameter(description = "Minimum context window (tokens)")
+        @RequestParam(required = false) Long minContextWindow,
+
+        @Parameter(description = "Keyword search in model name")
+        @RequestParam(required = false) String keyword,
+
+        @Parameter(description = "Release date from (ISO date)")
+        @RequestParam(required = false) LocalDate releaseDateFrom,
+
+        @Parameter(description = "Release date to (ISO date)")
+        @RequestParam(required = false) LocalDate releaseDateTo,
+
+        @Parameter(description = "Minimum intelligence index score")
+        @RequestParam(required = false) BigDecimal minScore,
+
+        @PageableDefault(size = 20, sort = "scoreAaIntelligenceIndex") Pageable pageable
+    ) {
+        LLMModelSearchCondition condition = LLMModelSearchCondition.builder()
+            .provider(provider)
+            .creatorSlug(creatorSlug)
+            .license(license)
+            .maxPrice(maxPrice)
+            .minContextWindow(minContextWindow)
+            .keyword(keyword)
+            .releaseDateFrom(releaseDateFrom)
+            .releaseDateTo(releaseDateTo)
+            .minScore(minScore)
+            .build();
+
+        Page<LLMModelSummaryResponse> models = llmRankingService.searchModels(condition, pageable);
+        return ResponseEntity.ok(models);
     }
 
 

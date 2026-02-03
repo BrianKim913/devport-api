@@ -8,6 +8,7 @@ import kr.devport.api.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -42,15 +43,20 @@ public class SecurityConfig {
                     "/",
                     "/error",
                     "/favicon.ico",
-                    "/api/articles/**",
                     "/api/git-repos/**",
                     "/api/llm/**",
                     "/api/llm-rankings",
                     "/api/benchmarks",
                     "/api/auth/refresh"
                 ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/articles/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/articles/*/view").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/articles/*/comments").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/articles/*/comments/*").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/articles/*/comments/*").authenticated()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/oauth2/**", "/login/**").permitAll()
+                .requestMatchers("/api/me/**").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )

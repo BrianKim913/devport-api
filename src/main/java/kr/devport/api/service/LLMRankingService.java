@@ -3,6 +3,7 @@ package kr.devport.api.service;
 import kr.devport.api.domain.entity.LLMBenchmark;
 import kr.devport.api.domain.entity.LLMModel;
 import kr.devport.api.domain.enums.BenchmarkType;
+import kr.devport.api.dto.request.LLMModelSearchCondition;
 import kr.devport.api.dto.response.*;
 import kr.devport.api.repository.LLMBenchmarkRepository;
 import kr.devport.api.repository.LLMModelRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,6 +47,35 @@ public class LLMRankingService {
             Integer rank = calculateRankForModel(model, null);
             return LLMModelSummaryResponse.fromEntity(model, rank);
         });
+    }
+
+    /**
+     * QueryDSL을 사용한 동적 검색 (확장된 필터 지원)
+     * - 기존 5개 + 신규 4개 = 9개 선택적 필터 조건
+     * - LEFT JOIN FETCH로 N+1 문제 방지
+     * - BooleanExpression 조합으로 null 조건 자동 제외
+     */
+    public Page<LLMModelSummaryResponse> searchModels(LLMModelSearchCondition condition, Pageable pageable) {
+        Page<LLMModel> models = modelRepository.searchWithCondition(condition, pageable);
+
+        return models.map(model -> {
+            Integer rank = calculateRankForModel(model, null);
+            return LLMModelSummaryResponse.fromEntity(model, rank);
+        });
+    }
+
+    /**
+     * QueryDSL을 사용한 리더보드 조회 (확장된 필터 지원)
+     */
+    public List<LLMLeaderboardEntryResponse> getLeaderboardWithCondition(
+        BenchmarkType benchmarkType,
+        LLMModelSearchCondition condition
+    ) {
+        List<LLMModel> models = modelRepository.findAllWithCondition(condition);
+
+        models.sort(getComparatorForBenchmark(benchmarkType).reversed());
+
+        return calculateRanksForLeaderboard(models, benchmarkType);
     }
 
     public LLMModelDetailResponse getModelById(String modelId) {

@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import kr.devport.api.domain.enums.Category;
 import kr.devport.api.domain.enums.ItemType;
@@ -23,6 +24,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "articles")
@@ -36,6 +38,9 @@ public class Article {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true, nullable = false, length = 100, name = "external_id")
+    private String externalId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "item_type")
@@ -80,4 +85,11 @@ public class Article {
 
     @Embedded
     private ArticleMetadata metadata;
+
+    @PrePersist
+    public void generateExternalId() {
+        if (this.externalId == null) {
+            this.externalId = UUID.randomUUID().toString();
+        }
+    }
 }

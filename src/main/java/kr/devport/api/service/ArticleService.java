@@ -2,6 +2,8 @@ package kr.devport.api.service;
 
 import kr.devport.api.domain.entity.Article;
 import kr.devport.api.domain.enums.Category;
+import kr.devport.api.dto.request.ArticleSearchCondition;
+import kr.devport.api.dto.response.ArticleDetailResponse;
 import kr.devport.api.dto.response.ArticleMetadataResponse;
 import kr.devport.api.dto.response.ArticlePageResponse;
 import kr.devport.api.dto.response.ArticleResponse;
@@ -68,9 +70,54 @@ public class ArticleService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * QueryDSL을 사용한 동적 검색
+     * - 8개 선택적 필터 조건을 타입 안전하게 처리
+     * - BooleanExpression 조합으로 null 조건 자동 제외
+     */
+    public ArticlePageResponse searchArticles(ArticleSearchCondition condition, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Article> articlePage = articleRepository.searchWithCondition(condition, pageable);
+
+        return ArticlePageResponse.builder()
+            .content(articlePage.getContent().stream()
+                .map(this::convertToArticleResponse)
+                .collect(Collectors.toList()))
+            .totalElements(articlePage.getTotalElements())
+            .totalPages(articlePage.getTotalPages())
+            .currentPage(articlePage.getNumber())
+            .hasMore(articlePage.hasNext())
+            .build();
+    }
+
+    public ArticleDetailResponse getArticleByExternalId(String externalId) {
+        Article article = articleRepository.findByExternalId(externalId)
+            .orElseThrow(() -> new IllegalArgumentException("Article not found: " + externalId));
+        return convertToArticleDetailResponse(article);
+    }
+
+    private ArticleDetailResponse convertToArticleDetailResponse(Article article) {
+        return ArticleDetailResponse.builder()
+            .externalId(article.getExternalId())
+            .itemType(article.getItemType())
+            .source(article.getSource())
+            .category(article.getCategory())
+            .summaryKoTitle(article.getSummaryKoTitle())
+            .summaryKoBody(article.getSummaryKoBody())
+            .titleEn(article.getTitleEn())
+            .url(article.getUrl())
+            .score(article.getScore())
+            .tags(article.getTags() != null ? new java.util.ArrayList<>(article.getTags()) : new java.util.ArrayList<>())
+            .createdAtSource(article.getCreatedAtSource())
+            .metadata(convertToMetadataResponse(article))
+            .build();
+    }
+
     private ArticleResponse convertToArticleResponse(Article article) {
         return ArticleResponse.builder()
             .id(article.getId())
+            .externalId(article.getExternalId())
             .itemType(article.getItemType())
             .source(article.getSource())
             .category(article.getCategory())
