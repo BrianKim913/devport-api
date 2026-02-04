@@ -25,6 +25,12 @@ public class UserResponse {
     @Schema(description = "User email address", example = "user@example.com")
     private String email;
 
+    @Schema(description = "Username (for LOCAL users)", example = "johndoe")
+    private String username;
+
+    @Schema(description = "Email verification status", example = "true")
+    private Boolean emailVerified;
+
     @Schema(description = "User display name", example = "John Doe")
     private String name;
 

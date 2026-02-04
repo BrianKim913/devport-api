@@ -43,6 +43,18 @@ spring:
     redis:
       time-to-live: 300000
 
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   web:
     cors:
       allowed-origins:
@@ -141,6 +153,11 @@ app:
   oauth2:
     redirect-uri: http://localhost:5173/oauth2/redirect
     failure-redirect-uri: http://localhost:5173/login
+
+  email:
+    from: ${EMAIL_FROM:noreply@devport.kr}
+    verification-url: ${FRONTEND_URL:http://localhost:5173}/verify-email?token={token}
+    reset-password-url: ${FRONTEND_URL:http://localhost:5173}/reset-password?token={token}
 
 cloudflare:
   turnstile:

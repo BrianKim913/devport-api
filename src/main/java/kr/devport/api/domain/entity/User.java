@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import kr.devport.api.domain.enums.AuthProvider;
 import kr.devport.api.domain.enums.UserRole;
@@ -19,7 +20,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+    @Index(name = "idx_users_username", columnList = "username"),
+    @Index(name = "idx_users_email", columnList = "email")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,8 +35,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(unique = true, length = 100)
     private String email;
+
+    @Column(unique = true, length = 50)
+    private String username;
+
+    @Column(length = 255)
+    private String password;
 
     @Column(length = 100)
     private String name;
@@ -60,4 +70,11 @@ public class User {
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(name = "email_added_at")
+    private LocalDateTime emailAddedAt;
 }

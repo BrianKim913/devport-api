@@ -18,6 +18,8 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
 
     private Long id;
     private String email;
+    private String username;
+    private String password;
     private String name;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes;
@@ -30,6 +32,8 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
         return new CustomUserDetails(
             user.getId(),
             user.getEmail(),
+            user.getUsername() != null ? user.getUsername() : user.getEmail(),
+            user.getPassword(),
             user.getName(),
             authorities,
             null
@@ -41,6 +45,8 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
         return new CustomUserDetails(
             userDetails.getId(),
             userDetails.getEmail(),
+            userDetails.getUsername(),
+            userDetails.getPassword(),
             userDetails.getName(),
             userDetails.getAuthorities(),
             attributes
@@ -49,12 +55,12 @@ public class CustomUserDetails implements UserDetails, OAuth2User {
 
     @Override
     public String getPassword() {
-        return null; // OAuth2 사용자는 별도 비밀번호가 없다.
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override

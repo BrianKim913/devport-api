@@ -40,6 +40,10 @@ public class JwtTokenProvider {
             .compact();
     }
 
+    public String createAccessToken(Long userId) {
+        return generateAccessToken(userId);
+    }
+
     public String generateRefreshToken(Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
@@ -50,6 +54,10 @@ public class JwtTokenProvider {
             .expiration(expiryDate)
             .signWith(getSigningKey(), Jwts.SIG.HS512)
             .compact();
+    }
+
+    public long getAccessTokenExpirationMs() {
+        return accessTokenExpirationMs;
     }
 
     public long getRefreshTokenExpirationMs() {

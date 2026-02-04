@@ -58,10 +58,12 @@ public class AuthService {
         return UserResponse.builder()
             .id(user.getId())
             .email(user.getEmail())
+            .username(user.getUsername())
             .name(user.getName())
             .profileImageUrl(user.getProfileImageUrl())
             .authProvider(user.getAuthProvider())
             .role(user.getRole())
+            .emailVerified(user.getEmailVerified())
             .createdAt(user.getCreatedAt())
             .lastLoginAt(user.getLastLoginAt())
             .build();
