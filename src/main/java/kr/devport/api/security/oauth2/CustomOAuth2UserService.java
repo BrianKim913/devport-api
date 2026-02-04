@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
@@ -35,16 +38,26 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         // GitHub의 경우 기본 응답에 이메일이 없으면 별도 API로 조회한다.
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        if ("github".equals(registrationId) && oAuth2User.getAttribute("email") == null) {
-            String email = fetchGitHubEmail(userRequest.getAccessToken().getTokenValue());
-            if (email != null) {
-                Map<String, Object> modifiedAttributes = new java.util.HashMap<>(oAuth2User.getAttributes());
-                modifiedAttributes.put("email", email);
-                oAuth2User = new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
-                    oAuth2User.getAuthorities(),
-                    modifiedAttributes,
-                    "id"
-                );
+        log.info("Loading OAuth2 user for provider: {}", registrationId);
+
+        if ("github".equals(registrationId)) {
+            String currentEmail = oAuth2User.getAttribute("email");
+            log.info("GitHub user email from attributes: {}", currentEmail);
+
+            if (currentEmail == null) {
+                log.info("Email is null, fetching from GitHub API");
+                String email = fetchGitHubEmail(userRequest.getAccessToken().getTokenValue());
+                log.info("Fetched email from GitHub API: {}", email);
+
+                if (email != null) {
+                    Map<String, Object> modifiedAttributes = new java.util.HashMap<>(oAuth2User.getAttributes());
+                    modifiedAttributes.put("email", email);
+                    oAuth2User = new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
+                        oAuth2User.getAuthorities(),
+                        modifiedAttributes,
+                        "id"
+                    );
+                }
             }
         }
 
@@ -53,6 +66,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private String fetchGitHubEmail(String accessToken) {
         try {
+            log.info("Fetching GitHub email from API");
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
@@ -66,17 +80,23 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             );
 
             List<Map<String, Object>> emails = response.getBody();
+            log.info("GitHub API response - emails count: {}", emails != null ? emails.size() : 0);
+
             if (emails != null && !emails.isEmpty()) {
                 for (Map<String, Object> emailData : emails) {
                     if (Boolean.TRUE.equals(emailData.get("primary"))) {
-                        return (String) emailData.get("email");
+                        String primaryEmail = (String) emailData.get("email");
+                        log.info("Found primary email: {}", primaryEmail);
+                        return primaryEmail;
                     }
                 }
-                return (String) emails.get(0).get("email");
+                String firstEmail = (String) emails.get(0).get("email");
+                log.info("No primary email found, using first email: {}", firstEmail);
+                return firstEmail;
             }
+            log.warn("No emails returned from GitHub API");
         } catch (Exception e) {
-            // 조회 실패 시에도 인증 흐름은 중단하지 않는다.
-            e.printStackTrace();
+            log.error("Failed to fetch GitHub email", e);
         }
         return null;
     }
@@ -89,7 +109,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             oAuth2User.getAttributes()
         );
 
+        log.info("Processing OAuth2 user - Provider: {}, Email: {}, ID: {}",
+            registrationId, oAuth2UserInfo.getEmail(), oAuth2UserInfo.getId());
+
         if (oAuth2UserInfo.getEmail() == null || oAuth2UserInfo.getEmail().isEmpty()) {
+            log.error("Email not found from OAuth2 provider: {}", registrationId);
             throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
         }
 
@@ -101,13 +125,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         User user;
         if (userOptional.isPresent()) {
+            log.info("Existing user found for provider: {}", authProvider);
             user = updateExistingUser(userOptional.get(), oAuth2UserInfo);
         } else {
             // 같은 이메일로 이미 등록된 계정이 있는지 확인
             Optional<User> existingEmailUser = userRepository.findByEmail(oAuth2UserInfo.getEmail());
             if (existingEmailUser.isPresent()) {
+                User existing = existingEmailUser.get();
+                log.error("Cannot register {} account - email {} already exists with provider: {}",
+                    authProvider, oAuth2UserInfo.getEmail(), existing.getAuthProvider());
                 throw new OAuth2AuthenticationException("같은 정보의 계정이 이미 존재합니다");
             }
+            log.info("Registering new user with provider: {}", authProvider);
             user = registerNewUser(authProvider, oAuth2UserInfo);
         }
 

@@ -39,6 +39,9 @@ public class SecurityConfig {
             .httpBasic(basic -> basic.disable())
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/h2-console", "/h2-console/**").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers("/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .requestMatchers(
                     "/",
                     "/error",
