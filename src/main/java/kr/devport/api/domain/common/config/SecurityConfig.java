@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers("/actuator/info").permitAll()
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
+                .requestMatchers("/api/webhooks/crawler/**").permitAll()
                 .requestMatchers(
                     "/",
                     "/error",

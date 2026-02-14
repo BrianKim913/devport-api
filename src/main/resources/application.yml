@@ -164,6 +164,9 @@ app:
     model: ${OPENAI_MODEL:gpt-5-nano}
     max-completion-tokens: ${OPENAI_MAX_COMPLETION_TOKENS:128000}
 
+  crawler:
+    webhook-secret: ${CRAWLER_WEBHOOK_SECRET:}
+
 cloudflare:
   turnstile:
     secret-key: ${CLOUDFLARE_TURNSTILE_SECRET_KEY:your_secret_key_here}
