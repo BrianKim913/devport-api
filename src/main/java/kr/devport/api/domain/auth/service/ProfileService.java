@@ -3,6 +3,7 @@ package kr.devport.api.domain.auth.service;
 import kr.devport.api.domain.auth.entity.EmailVerificationToken;
 import kr.devport.api.domain.auth.entity.User;
 import kr.devport.api.domain.auth.enums.AuthProvider;
+import kr.devport.api.domain.auth.dto.request.FlairUpdateRequest;
 import kr.devport.api.domain.auth.dto.request.PasswordChangeRequest;
 import kr.devport.api.domain.auth.dto.request.ProfileUpdateRequest;
 import kr.devport.api.domain.common.exception.DuplicateEmailException;
@@ -113,5 +114,19 @@ public class ProfileService {
         userRepository.save(user);
 
         log.info("Email removed for user: {}", user.getId());
+    }
+
+    @Transactional
+    public User updateFlair(Long userId, FlairUpdateRequest request) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFlair(request.getFlair());
+        user.setFlairColor(request.getFlairColor());
+        user.setUpdatedAt(LocalDateTime.now());
+
+        user = userRepository.save(user);
+        log.info("Flair updated for user: {}", user.getUsername());
+        return user;
     }
 }

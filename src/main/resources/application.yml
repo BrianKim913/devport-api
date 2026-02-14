@@ -159,6 +159,11 @@ app:
     verification-url: ${FRONTEND_URL:http://localhost:5173}/verify-email?token={token}
     reset-password-url: ${FRONTEND_URL:http://localhost:5173}/reset-password?token={token}
 
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-5-nano}
+    max-completion-tokens: ${OPENAI_MAX_COMPLETION_TOKENS:128000}
+
 cloudflare:
   turnstile:
     secret-key: ${CLOUDFLARE_TURNSTILE_SECRET_KEY:your_secret_key_here}

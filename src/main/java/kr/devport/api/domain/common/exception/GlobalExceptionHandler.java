@@ -101,6 +101,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(LLMProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleLLMProcessing(LLMProcessingException ex) {
+        log.error("LLM processing error: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.SERVICE_UNAVAILABLE.value())
+            .error("Service Unavailable")
+            .message(ex.getMessage())
+            .build();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();

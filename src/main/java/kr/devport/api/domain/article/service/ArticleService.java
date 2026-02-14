@@ -48,7 +48,7 @@ public class ArticleService {
             articlePage = articleRepository.findByCategory(category, pageable);
         }
 
-        // 캐시에 DTO를 저장해 지연 로딩 문제를 피한다.
+
         return ArticlePageResponse.builder()
             .content(articlePage.getContent().stream()
                 .map(this::convertToArticleResponse)

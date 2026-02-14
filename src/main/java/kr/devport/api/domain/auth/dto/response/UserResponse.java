@@ -48,4 +48,10 @@ public class UserResponse {
 
     @Schema(description = "Last login timestamp", example = "2025-01-15T14:30:00")
     private LocalDateTime lastLoginAt;
+
+    @Schema(description = "User flair text", example = "MLOps Engineer")
+    private String flair;
+
+    @Schema(description = "User flair color (hex)", example = "#a855f7")
+    private String flairColor;
 }

@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.devport.api.domain.auth.entity.User;
+import kr.devport.api.domain.auth.dto.request.FlairUpdateRequest;
 import kr.devport.api.domain.auth.dto.request.PasswordChangeRequest;
 import kr.devport.api.domain.auth.dto.request.ProfileUpdateRequest;
 import kr.devport.api.domain.auth.dto.response.UserResponse;
@@ -61,6 +62,8 @@ public class ProfileController {
             .emailVerified(user.getEmailVerified())
             .createdAt(user.getCreatedAt())
             .lastLoginAt(user.getLastLoginAt())
+            .flair(user.getFlair())
+            .flairColor(user.getFlairColor())
             .build();
 
         return ResponseEntity.ok(response);
@@ -99,5 +102,26 @@ public class ProfileController {
     ) {
         profileService.removeEmail(userDetails.getId());
         return ResponseEntity.ok(Map.of("message", "Email removed successfully"));
+    }
+
+    @Operation(
+        summary = "Update user flair",
+        description = "Update user flair text and color (displayed in comments)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Flair updated successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid flair data", content = @Content),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
+    })
+    @PutMapping("/flair")
+    public ResponseEntity<Map<String, String>> updateFlair(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @Valid @RequestBody FlairUpdateRequest request
+    ) {
+        User user = profileService.updateFlair(userDetails.getId(), request);
+        return ResponseEntity.ok(Map.of(
+            "flair", user.getFlair() != null ? user.getFlair() : "",
+            "flairColor", user.getFlairColor() != null ? user.getFlairColor() : ""
+        ));
     }
 }

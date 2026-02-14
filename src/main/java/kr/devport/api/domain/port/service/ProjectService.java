@@ -1,0 +1,116 @@
+package kr.devport.api.domain.port.service;
+
+import kr.devport.api.domain.port.dto.response.ProjectDetailResponse;
+import kr.devport.api.domain.port.dto.response.ProjectEventResponse;
+import kr.devport.api.domain.port.dto.response.ProjectOverviewResponse;
+import kr.devport.api.domain.port.dto.response.StarHistoryResponse;
+import kr.devport.api.domain.port.entity.Project;
+import kr.devport.api.domain.port.entity.ProjectEvent;
+import kr.devport.api.domain.port.entity.ProjectOverview;
+import kr.devport.api.domain.port.entity.ProjectStarHistory;
+import kr.devport.api.domain.port.enums.EventType;
+import kr.devport.api.domain.port.repository.ProjectEventRepository;
+import kr.devport.api.domain.port.repository.ProjectOverviewRepository;
+import kr.devport.api.domain.port.repository.ProjectRepository;
+import kr.devport.api.domain.port.repository.ProjectStarHistoryRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ProjectService {
+
+    private final ProjectRepository projectRepository;
+    private final ProjectEventRepository projectEventRepository;
+    private final ProjectStarHistoryRepository starHistoryRepository;
+    private final ProjectOverviewRepository overviewRepository;
+
+    @Transactional(readOnly = true)
+    public ProjectDetailResponse getProjectById(String externalId) {
+        Project project = projectRepository.findByExternalId(externalId)
+            .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + externalId));
+
+        return ProjectDetailResponse.builder()
+            .id(project.getExternalId())
+            .name(project.getName())
+            .fullName(project.getFullName())
+            .repoUrl(project.getRepoUrl())
+            .homepageUrl(project.getHomepageUrl())
+            .description(project.getDescription())
+            .stars(project.getStars())
+            .forks(project.getForks())
+            .contributors(project.getContributors())
+            .language(project.getLanguage())
+            .languageColor(project.getLanguageColor())
+            .license(project.getLicense())
+            .lastRelease(project.getLastRelease())
+            .tags(project.getTags())
+            .build();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ProjectEventResponse> getProjectEvents(String projectExternalId, EventType eventType, Pageable pageable) {
+        Page<ProjectEvent> events;
+
+        if (eventType != null) {
+            events = projectEventRepository.findByProjectAndEventType(projectExternalId, eventType, pageable);
+        } else {
+            events = projectEventRepository.findByProject_ExternalId(projectExternalId, pageable);
+        }
+
+        return events.map(this::toEventResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StarHistoryResponse> getStarHistory(String projectExternalId, LocalDate from, LocalDate to) {
+        List<ProjectStarHistory> history = starHistoryRepository
+            .findByProject_ExternalIdAndDateBetweenOrderByDateAsc(projectExternalId, from, to);
+
+        return history.stream()
+            .map(h -> StarHistoryResponse.builder()
+                .date(h.getDate())
+                .stars(h.getStars())
+                .build())
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ProjectOverviewResponse getProjectOverview(String projectExternalId) {
+        ProjectOverview overview = overviewRepository.findByProject_ExternalId(projectExternalId)
+            .orElseThrow(() -> new IllegalArgumentException("Project overview not found for project: " + projectExternalId));
+
+        return ProjectOverviewResponse.builder()
+            .summary(overview.getSummary())
+            .highlights(overview.getHighlights())
+            .quickstart(overview.getQuickstart())
+            .links(overview.getLinks())
+            .sourceUrl(overview.getSourceUrl())
+            .fetchedAt(overview.getFetchedAt())
+            .summarizedAt(overview.getSummarizedAt())
+            .build();
+    }
+
+    private ProjectEventResponse toEventResponse(ProjectEvent event) {
+        return ProjectEventResponse.builder()
+            .id(event.getExternalId())
+            .version(event.getVersion())
+            .releasedAt(event.getReleasedAt())
+            .eventTypes(event.getEventTypes())
+            .summary(event.getSummary())
+            .bullets(event.getBullets())
+            .impactScore(event.getImpactScore())
+            .isSecurity(event.getIsSecurity())
+            .isBreaking(event.getIsBreaking())
+            .sourceUrl(event.getSourceUrl())
+            .build();
+    }
+}

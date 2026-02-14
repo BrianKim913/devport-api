@@ -77,4 +77,10 @@ public class User {
 
     @Column(name = "email_added_at")
     private LocalDateTime emailAddedAt;
+
+    @Column(length = 30)
+    private String flair;
+
+    @Column(length = 7, name = "flair_color")
+    private String flairColor;
 }

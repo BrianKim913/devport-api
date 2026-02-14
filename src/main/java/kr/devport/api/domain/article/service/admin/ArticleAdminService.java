@@ -3,17 +3,26 @@ package kr.devport.api.domain.article.service.admin;
 import kr.devport.api.domain.article.entity.Article;
 import kr.devport.api.domain.article.entity.ArticleMetadata;
 import kr.devport.api.domain.article.dto.request.admin.ArticleCreateRequest;
+import kr.devport.api.domain.article.dto.request.admin.ArticleLLMCreateRequest;
 import kr.devport.api.domain.article.dto.request.admin.ArticleUpdateRequest;
+import kr.devport.api.domain.article.dto.response.ArticleLLMPreviewResponse;
 import kr.devport.api.domain.article.dto.response.ArticleMetadataResponse;
+import kr.devport.api.domain.article.dto.response.ArticlePageResponse;
 import kr.devport.api.domain.article.dto.response.ArticleResponse;
+import kr.devport.api.domain.article.enums.Category;
 import kr.devport.api.domain.article.repository.ArticleRepository;
+import kr.devport.api.domain.article.service.admin.ArticleLLMService.LLMArticleResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +30,7 @@ import java.util.ArrayList;
 public class ArticleAdminService {  
 
     private final ArticleRepository articleRepository;
+    private final ArticleLLMService articleLLMService;
 
     @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
     public ArticleResponse createArticle(ArticleCreateRequest request) {
@@ -93,6 +103,95 @@ public class ArticleAdminService {
             throw new IllegalArgumentException("Article not found with id: " + id);
         }
         articleRepository.deleteById(id);
+    }
+
+    @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
+    public ArticleResponse createArticleFromLLM(ArticleLLMCreateRequest request) {
+        LLMArticleResult result = articleLLMService.processArticle(
+            request.getTitleEn(),
+            request.getUrl(),
+            request.getContent(),
+            request.getTags()
+        );
+
+        Category category;
+        try {
+            category = Category.valueOf(result.category());
+        } catch (IllegalArgumentException e) {
+            category = Category.OTHER;
+        }
+
+        Article article = Article.builder()
+            .itemType(request.getItemType())
+            .source(request.getSource())
+            .category(category)
+            .summaryKoTitle(result.titleKo())
+            .summaryKoBody(result.summaryKo())
+            .titleEn(request.getTitleEn())
+            .url(request.getUrl())
+            .score(100)
+            .tags(result.tags() != null ? new ArrayList<>(result.tags()) : new ArrayList<>())
+            .createdAtSource(LocalDateTime.now())
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+
+        if (request.getMetadata() != null) {
+            article.setMetadata(ArticleMetadata.builder()
+                .stars(request.getMetadata().getStars())
+                .comments(request.getMetadata().getComments())
+                .upvotes(request.getMetadata().getUpvotes())
+                .readTime(request.getMetadata().getReadTime())
+                .language(request.getMetadata().getLanguage())
+                .build());
+        }
+
+        Article saved = articleRepository.save(article);
+        return convertToResponse(saved);
+    }
+
+    public ArticleLLMPreviewResponse previewArticleLLM(ArticleLLMCreateRequest request) {
+        LLMArticleResult result = articleLLMService.processArticle(
+            request.getTitleEn(),
+            request.getUrl(),
+            request.getContent(),
+            request.getTags()
+        );
+
+        return ArticleLLMPreviewResponse.builder()
+            .isTechnical(result.isTechnical())
+            .titleKo(result.titleKo())
+            .summaryKo(result.summaryKo())
+            .category(result.category())
+            .tags(result.tags())
+            .url(result.url())
+            .titleEn(request.getTitleEn())
+            .source(request.getSource())
+            .build();
+    }
+
+    @Transactional(readOnly = true)
+    public ArticlePageResponse listArticles(int page, int size, String search) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Article> articlePage;
+        if (search != null && !search.isBlank()) {
+            articlePage = articleRepository.searchFulltext(search.trim(), pageRequest);
+        } else {
+            articlePage = articleRepository.findAll(pageRequest);
+        }
+
+        List<ArticleResponse> content = articlePage.getContent().stream()
+            .map(this::convertToResponse)
+            .toList();
+
+        return ArticlePageResponse.builder()
+            .content(content)
+            .totalElements(articlePage.getTotalElements())
+            .totalPages(articlePage.getTotalPages())
+            .currentPage(articlePage.getNumber())
+            .hasMore(articlePage.hasNext())
+            .build();
     }
 
     private ArticleResponse convertToResponse(Article article) {

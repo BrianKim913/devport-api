@@ -15,12 +15,16 @@ public class CommentAuthorResponse {
     private Long id;
     private String name;
     private String profileImageUrl;
+    private String flair;
+    private String flairColor;
 
     public static CommentAuthorResponse from(User user) {
         return CommentAuthorResponse.builder()
             .id(user.getId())
             .name(user.getName())
             .profileImageUrl(user.getProfileImageUrl())
+            .flair(user.getFlair())
+            .flairColor(user.getFlairColor())
             .build();
     }
 }
