@@ -5,6 +5,8 @@ import kr.devport.api.domain.gitrepo.enums.Category;
 import kr.devport.api.domain.gitrepo.dto.response.GitRepoPageResponse;
 import kr.devport.api.domain.gitrepo.dto.response.GitRepoResponse;
 import kr.devport.api.domain.gitrepo.repository.GitRepoRepository;
+import kr.devport.api.domain.common.cache.CacheKeyFactory;
+import kr.devport.api.domain.common.cache.CacheNames;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -25,8 +27,8 @@ public class GitRepoService {
     private final GitRepoRepository gitRepoRepository;
 
     @Cacheable(
-        value = "gitRepos",
-        key = "#category != null ? #category.name() + '_' + #page + '_' + #size : 'all_' + #page + '_' + #size"
+        value = CacheNames.GIT_REPOS,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitRepoListKey(#category, #page, #size)"
     )
     public GitRepoPageResponse getGitRepos(Category category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size,
@@ -54,7 +56,10 @@ public class GitRepoService {
             .build();
     }
 
-    @Cacheable(value = "trendingGitRepos", key = "#page + '_' + #size")
+    @Cacheable(
+        value = CacheNames.TRENDING_GIT_REPOS,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingGitReposKey(#page, #size)"
+    )
     public GitRepoPageResponse getTrendingGitRepos(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
@@ -71,7 +76,10 @@ public class GitRepoService {
             .build();
     }
 
-    @Cacheable(value = "gitReposByLanguage", key = "#language + '_' + #limit")
+    @Cacheable(
+        value = CacheNames.GIT_REPOS_BY_LANGUAGE,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitReposByLanguageKey(#language, #limit)"
+    )
     public List<GitRepoResponse> getGitReposByLanguage(String language, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
 

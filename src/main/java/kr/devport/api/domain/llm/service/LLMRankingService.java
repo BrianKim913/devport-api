@@ -7,6 +7,8 @@ import kr.devport.api.domain.llm.dto.request.LLMModelSearchCondition;
 import kr.devport.api.domain.llm.dto.response.*;
 import kr.devport.api.domain.llm.repository.LLMBenchmarkRepository;
 import kr.devport.api.domain.llm.repository.LLMModelRepository;
+import kr.devport.api.domain.common.cache.CacheKeyFactory;
+import kr.devport.api.domain.common.cache.CacheNames;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -86,8 +88,8 @@ public class LLMRankingService {
     }
 
     @Cacheable(
-        value = "llmLeaderboard",
-        key = "#benchmarkType.name() + '_' + (#provider != null ? #provider : 'all') + '_' + (#creatorSlug != null ? #creatorSlug : 'all') + '_' + (#license != null ? #license : 'all')"
+        value = CacheNames.LLM_LEADERBOARD,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).llmLeaderboardKey(#benchmarkType, #provider, #creatorSlug, #license, #maxPrice, #minContextWindow)"
     )
     public List<LLMLeaderboardEntryResponse> getLeaderboard(
         BenchmarkType benchmarkType,
@@ -106,7 +108,10 @@ public class LLMRankingService {
         return calculateRanksForLeaderboard(models, benchmarkType);
     }
 
-    @Cacheable(value = "benchmarks", key = "'all'")
+    @Cacheable(
+        value = CacheNames.LLM_BENCHMARKS,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).allBenchmarksKey()"
+    )
     public List<LLMBenchmarkResponse> getAllBenchmarks() {
         return benchmarkRepository.findAllByOrderBySortOrderAsc().stream()
             .map(LLMBenchmarkResponse::fromEntity)

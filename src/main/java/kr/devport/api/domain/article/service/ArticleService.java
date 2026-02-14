@@ -11,6 +11,8 @@ import kr.devport.api.domain.article.dto.response.ArticlePageResponse;
 import kr.devport.api.domain.article.dto.response.ArticleResponse;
 import kr.devport.api.domain.article.dto.response.TrendingTickerResponse;
 import kr.devport.api.domain.article.repository.ArticleRepository;
+import kr.devport.api.domain.common.cache.CacheKeyFactory;
+import kr.devport.api.domain.common.cache.CacheNames;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -31,8 +33,8 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
 
     @Cacheable(
-        value = "articles",
-        key = "#category != null ? #category.name() + '_' + #page + '_' + #size : 'all_' + #page + '_' + #size"
+        value = CacheNames.ARTICLES,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).articleListKey(#category, #page, #size)"
     )
     public ArticlePageResponse getArticles(Category category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size,
@@ -61,7 +63,10 @@ public class ArticleService {
     }
 
 
-    @Cacheable(value = "trendingTicker", key = "#limit")
+    @Cacheable(
+        value = CacheNames.TRENDING_TICKER,
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingTickerKey(#limit)"
+    )
     public List<TrendingTickerResponse> getTrendingTicker(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
 
