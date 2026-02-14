@@ -19,7 +19,10 @@ public class ModelCreatorAdminService {
 
     private final ModelCreatorRepository modelCreatorRepository;
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public ModelCreatorResponse createModelCreator(ModelCreatorCreateRequest request) {
         ModelCreator creator = ModelCreator.builder()
             .externalId(request.getExternalId())
@@ -33,7 +36,10 @@ public class ModelCreatorAdminService {
         return convertToResponse(saved);
     }
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public ModelCreatorResponse updateModelCreator(Long id, ModelCreatorUpdateRequest request) {
         ModelCreator creator = modelCreatorRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("ModelCreator not found with id: " + id));
@@ -47,7 +53,10 @@ public class ModelCreatorAdminService {
         return convertToResponse(updated);
     }
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public void deleteModelCreator(Long id) {
         if (!modelCreatorRepository.existsById(id)) {
             throw new IllegalArgumentException("ModelCreator not found with id: " + id);

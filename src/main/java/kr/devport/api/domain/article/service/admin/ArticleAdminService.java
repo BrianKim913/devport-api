@@ -32,7 +32,10 @@ public class ArticleAdminService {
     private final ArticleRepository articleRepository;
     private final ArticleLLMService articleLLMService;
 
-    @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).ARTICLES}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_TICKER}"
+    }, allEntries = true)
     public ArticleResponse createArticle(ArticleCreateRequest request) {
         Article article = Article.builder()
             .itemType(request.getItemType())
@@ -63,7 +66,10 @@ public class ArticleAdminService {
         return convertToResponse(saved);
     }
 
-    @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).ARTICLES}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_TICKER}"
+    }, allEntries = true)
     public ArticleResponse updateArticle(Long id, ArticleUpdateRequest request) {
         Article article = articleRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Article not found with id: " + id));
@@ -97,7 +103,10 @@ public class ArticleAdminService {
         return convertToResponse(updated);
     }
 
-    @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).ARTICLES}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_TICKER}"
+    }, allEntries = true)
     public void deleteArticle(Long id) {
         if (!articleRepository.existsById(id)) {
             throw new IllegalArgumentException("Article not found with id: " + id);
@@ -105,7 +114,10 @@ public class ArticleAdminService {
         articleRepository.deleteById(id);
     }
 
-    @CacheEvict(value = {"articles", "trendingTicker"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).ARTICLES}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_TICKER}"
+    }, allEntries = true)
     public ArticleResponse createArticleFromLLM(ArticleLLMCreateRequest request) {
         LLMArticleResult result = articleLLMService.processArticle(
             request.getTitleEn(),

@@ -23,7 +23,10 @@ public class LLMModelAdminService {
     private final LLMModelRepository llmModelRepository;
     private final ModelCreatorRepository modelCreatorRepository;
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public LLMModelDetailResponse createLLMModel(LLMModelCreateRequest request) {
         LLMModel model = LLMModel.builder()
             .externalId(request.getExternalId())
@@ -70,7 +73,10 @@ public class LLMModelAdminService {
         return convertToDetailResponse(saved);
     }
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public LLMModelDetailResponse updateLLMModel(Long id, LLMModelUpdateRequest request) {
         LLMModel model = llmModelRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("LLMModel not found with id: " + id));
@@ -117,7 +123,10 @@ public class LLMModelAdminService {
         return convertToDetailResponse(updated);
     }
 
-    @CacheEvict(value = {"llmModels", "llmLeaderboard"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_MODELS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).LLM_LEADERBOARD}"
+    }, allEntries = true)
     public void deleteLLMModel(Long id) {
         if (!llmModelRepository.existsById(id)) {
             throw new IllegalArgumentException("LLMModel not found with id: " + id);

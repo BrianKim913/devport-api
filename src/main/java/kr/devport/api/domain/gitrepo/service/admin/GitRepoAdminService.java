@@ -19,7 +19,11 @@ public class GitRepoAdminService {
 
     private final GitRepoRepository gitRepoRepository;
 
-    @CacheEvict(value = {"gitRepos", "trendingGitRepos", "gitReposByLanguage"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS_BY_LANGUAGE}"
+    }, allEntries = true)
     public GitRepoResponse createGitRepo(GitRepoCreateRequest request) {
         GitRepo gitRepo = GitRepo.builder()
             .fullName(request.getFullName())
@@ -41,7 +45,11 @@ public class GitRepoAdminService {
         return convertToResponse(saved);
     }
 
-    @CacheEvict(value = {"gitRepos", "trendingGitRepos", "gitReposByLanguage"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS_BY_LANGUAGE}"
+    }, allEntries = true)
     public GitRepoResponse updateGitRepo(Long id, GitRepoUpdateRequest request) {
         GitRepo gitRepo = gitRepoRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("GitRepo not found with id: " + id));
@@ -63,7 +71,11 @@ public class GitRepoAdminService {
         return convertToResponse(updated);
     }
 
-    @CacheEvict(value = {"gitRepos", "trendingGitRepos", "gitReposByLanguage"}, allEntries = true)
+    @CacheEvict(value = {
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).TRENDING_GIT_REPOS}",
+        "#{T(kr.devport.api.domain.common.cache.CacheNames).GIT_REPOS_BY_LANGUAGE}"
+    }, allEntries = true)
     public void deleteGitRepo(Long id) {
         if (!gitRepoRepository.existsById(id)) {
             throw new IllegalArgumentException("GitRepo not found with id: " + id);
