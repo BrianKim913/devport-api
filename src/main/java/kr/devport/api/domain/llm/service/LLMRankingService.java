@@ -89,7 +89,8 @@ public class LLMRankingService {
 
     @Cacheable(
         value = CacheNames.LLM_LEADERBOARD,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).llmLeaderboardKey(#benchmarkType, #provider, #creatorSlug, #license, #maxPrice, #minContextWindow)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).llmLeaderboardKey(#benchmarkType, #provider, #creatorSlug, #license, #maxPrice, #minContextWindow)",
+        unless = "@cacheFallbackBypass.shouldBypass('LLM')"
     )
     public List<LLMLeaderboardEntryResponse> getLeaderboard(
         BenchmarkType benchmarkType,
@@ -110,7 +111,8 @@ public class LLMRankingService {
 
     @Cacheable(
         value = CacheNames.LLM_BENCHMARKS,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).allBenchmarksKey()"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).allBenchmarksKey()",
+        unless = "@cacheFallbackBypass.shouldBypass('LLM')"
     )
     public List<LLMBenchmarkResponse> getAllBenchmarks() {
         return benchmarkRepository.findAllByOrderBySortOrderAsc().stream()

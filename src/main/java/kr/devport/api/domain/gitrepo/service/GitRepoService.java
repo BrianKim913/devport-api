@@ -28,7 +28,8 @@ public class GitRepoService {
 
     @Cacheable(
         value = CacheNames.GIT_REPOS,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitRepoListKey(#category, #page, #size)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitRepoListKey(#category, #page, #size)",
+        unless = "@cacheFallbackBypass.shouldBypass('GIT_REPO')"
     )
     public GitRepoPageResponse getGitRepos(Category category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size,
@@ -58,7 +59,8 @@ public class GitRepoService {
 
     @Cacheable(
         value = CacheNames.TRENDING_GIT_REPOS,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingGitReposKey(#page, #size)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingGitReposKey(#page, #size)",
+        unless = "@cacheFallbackBypass.shouldBypass('GIT_REPO')"
     )
     public GitRepoPageResponse getTrendingGitRepos(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -78,7 +80,8 @@ public class GitRepoService {
 
     @Cacheable(
         value = CacheNames.GIT_REPOS_BY_LANGUAGE,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitReposByLanguageKey(#language, #limit)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).gitReposByLanguageKey(#language, #limit)",
+        unless = "@cacheFallbackBypass.shouldBypass('GIT_REPO')"
     )
     public List<GitRepoResponse> getGitReposByLanguage(String language, int limit) {
         Pageable pageable = PageRequest.of(0, limit);

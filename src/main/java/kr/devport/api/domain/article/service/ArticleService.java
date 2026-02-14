@@ -34,7 +34,8 @@ public class ArticleService {
 
     @Cacheable(
         value = CacheNames.ARTICLES,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).articleListKey(#category, #page, #size)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).articleListKey(#category, #page, #size)",
+        unless = "@cacheFallbackBypass.shouldBypass('ARTICLE')"
     )
     public ArticlePageResponse getArticles(Category category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size,
@@ -65,7 +66,8 @@ public class ArticleService {
 
     @Cacheable(
         value = CacheNames.TRENDING_TICKER,
-        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingTickerKey(#limit)"
+        key = "T(kr.devport.api.domain.common.cache.CacheKeyFactory).trendingTickerKey(#limit)",
+        unless = "@cacheFallbackBypass.shouldBypass('ARTICLE')"
     )
     public List<TrendingTickerResponse> getTrendingTicker(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
