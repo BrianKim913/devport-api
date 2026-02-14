@@ -6,12 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import kr.devport.api.domain.common.cache.CacheTtlPolicy;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -44,24 +47,27 @@ public class RedisConfig {
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // Base cache configuration with serialization settings
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMinutes(5))
+            .entryTtl(CacheTtlPolicy.DEFAULT_TTL)
             .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
             .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonRedisSerializer()))
             .disableCachingNullValues();
 
+        // Build cache configurations from centralized TTL policy
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
+        CacheTtlPolicy.getAllTtls().forEach((cacheName, ttl) -> 
+            cacheConfigurations.put(cacheName, defaultConfig.entryTtl(ttl))
+        );
 
-        cacheConfigurations.put("trendingTicker", defaultConfig.entryTtl(Duration.ofMinutes(5)));
-        cacheConfigurations.put("githubTrending", defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("articles", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("gitRepos", defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put("trendingGitRepos", defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put("gitReposByLanguage", defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        cacheConfigurations.put("llmRankings", defaultConfig.entryTtl(Duration.ofHours(24)));
-        cacheConfigurations.put("benchmarks", defaultConfig.entryTtl(Duration.ofHours(24)));
+        // Use SCAN-based batch strategy for production-safe cache clearing
+        // Avoids KEYS command which blocks Redis in large keyspaces
+        RedisCacheWriter cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(
+            connectionFactory,
+            BatchStrategies.scan(1000) // SCAN with count hint of 1000 per iteration
+        );
 
-        return RedisCacheManager.builder(connectionFactory)
+        return RedisCacheManager.builder(cacheWriter)
             .cacheDefaults(defaultConfig)
             .withInitialCacheConfigurations(cacheConfigurations)
             .build();
